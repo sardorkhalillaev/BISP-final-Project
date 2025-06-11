@@ -1,0 +1,20 @@
+html, body, [class*="css"] {
+    background-color: #1e1e2f !important;
+    color: white !important;
+}
+
+input, .stTextInput input, .stNumberInput input {
+    background-color: #2c2c3e !important;
+    color: white !important;
+}
+
+.stButton > button {
+    background-color: #333 !important;
+    color: white !important;
+}
+
+
+
+
+
+

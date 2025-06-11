@@ -1,0 +1,160 @@
+.main-header {
+    background: linear-gradient(90deg, #1E3A8A 0%, #3B82F6 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-header h1 {
+    color: white;
+    margin: 0;
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+/* Metric cards */
+.metric-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border-left: 4px solid #3B82F6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.success-metric {
+    border-left-color: #10B981;
+}
+
+.warning-metric {
+    border-left-color: #F59E0B;
+}
+
+.danger-metric {
+    border-left-color: #EF4444;
+}
+
+/* Sidebar styling */
+.sidebar .sidebar-content {
+    background: #F8FAFC;
+    padding: 1rem;
+}
+
+/* Tab styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    background: #0e151c;
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    background: #12243c;
+    border-radius: 6px;
+    padding: 0 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.stTabs [aria-selected="true"] {
+    background: #3B82F6;
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Form styling */
+.stForm {
+    background: #2074c9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #649ee9;
+}
+
+/* Button styling */
+.stButton > button {
+    background: linear-gradient(90deg, #3B82F6, #1E40AF);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Status indicators */
+.status-available {
+    background-color: #10B981;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-occupied {
+    background-color: #EF4444;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-maintenance {
+    background-color: #F59E0B;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Chart containers */
+.chart-container {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* Footer */
+.dashboard-footer {
+    background: #F8FAFC;
+    padding: 1rem;
+    border-top: 1px solid #E2E8F0;
+    margin-top: 2rem;
+    border-radius: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .metric-card {
+        padding: 1rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 0 12px;
+        height: 45px;
+    }
+}
