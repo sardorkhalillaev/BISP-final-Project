@@ -9,13 +9,16 @@ import joblib
 import holidays
 class DataHelper:
     def __init__(self):
-        self.data = None 
+        self.data = None
         self.data_loaded = False
+        self.historical_daily_passengers_ts = None # Initialize this as well
 
-        # --- Load ALL Preprocessing Artifacts ---
-        models_meta_dir = "models_meta" 
-        self.feature_names_lists = {} 
-        self.label_encoders = {}    
+        # --- Initialize Dictionaries for Preprocessing Artifacts FIRST ---
+        self.preprocessors = {}                 # <--- INITIALIZE HERE
+        self.feature_names_lists = {}         # <--- INITIALIZE HERE
+        self.label_encoders = {}                # <--- INITIALIZE HERE
+
+        models_meta_dir = "models_meta"
 
         model_configs = {
             "delay_departure_regressor": {"prefix": "dep_delay"},
@@ -23,7 +26,7 @@ class DataHelper:
             "gate_classifier": {"prefix": "gate", "has_label_encoder": True},
             "ontime_performance_classifier": {"prefix": "ontime", "has_label_encoder": True},
             "passenger_volume_forecaster": {"prefix": "passenger_daily_total"},
-            "weather_estimator": {"prefix": "weather_impact", "has_label_encoder": True} 
+            "weather_estimator": {"prefix": "weather_impact", "has_label_encoder": True}
         }
 
         for model_key, config in model_configs.items():
@@ -35,8 +38,11 @@ class DataHelper:
                 if os.path.exists(preprocessor_path):
                     self.preprocessors[model_key] = joblib.load(preprocessor_path)
                 else:
+                    # It's better to not add a key if the file doesn't exist,
+                    # or handle it gracefully in get() later.
+                    # For now, setting to None is okay if checked before use.
                     st.sidebar.warning(f"Preprocessor not found for {model_key} at {preprocessor_path}")
-                    self.preprocessors[model_key] = None
+                    self.preprocessors[model_key] = None 
                 
                 if os.path.exists(features_path):
                     self.feature_names_lists[model_key] = joblib.load(features_path)
@@ -54,21 +60,15 @@ class DataHelper:
 
             except Exception as e:
                 st.sidebar.error(f"Error loading metadata for {model_key}: {e}")
-                self.preprocessors[model_key] = None
-                self.feature_names_lists[model_key] = None
-                if config.get("has_label_encoder", False): self.label_encoders[model_key] = None
+                self.preprocessors[model_key] = None # Ensure key exists but is None on error
+                self.feature_names_lists[model_key] = None # Ensure key exists but is None on error
+                if config.get("has_label_encoder", False):
+                    self.label_encoders[model_key] = None # Ensure key exists but is None on error
         
-        # Feedback (optional)
         if any(p is not None for p in self.preprocessors.values()):
-            st.sidebar.info("Some preprocessing objects loaded.")
+            st.sidebar.info("Some preprocessing objects (ColumnTransformers) loaded.")
         else:
-            st.sidebar.error("No preprocessing objects were loaded. Predictions will likely fail.")
-
-       
-        if "passenger_volume_forecaster" in self.preprocessors: # Check if its preprocessor loaded
-            self._prepare_historical_daily_passengers()
-
-
+            st.sidebar.error("No preprocessing objects (ColumnTransformers) were loaded. Predictions will likely fail.")
     def _prepare_historical_daily_passengers(self):
        
         self.historical_daily_passengers_ts = None
@@ -160,26 +160,39 @@ class DataHelper:
                 iso_col_name = current_model_dt_config[iso_key]
                 prefix = current_model_dt_config[prefix_key]
                 if iso_col_name in features_df.columns:
-                    def parse_dt(iso_string):
+                    def parse_dt(iso_string): # This is the nested function being called by .apply()
                         if pd.isna(iso_string) or str(iso_string).lower() == "--select--":
-                            return {f"{prefix}Hour": np.nan, f"{prefix}Minute_Bin": np.nan, f"{prefix}DayOfWeek": np.nan, f"{prefix}Month": np.nan, f"{prefix}DayOfYear": np.nan, f"{prefix}Is_Weekend": np.nan}
+                            return {
+                                f"{prefix}Hour": np.nan, 
+                                f"{prefix}Minute_Bin": np.nan, # Assuming you kept Minute_Bin
+                                f"{prefix}DayOfWeek": np.nan, 
+                                f"{prefix}Month": np.nan, 
+                                f"{prefix}DayOfYear": np.nan, # <--- Corresponds to dt.timetuple().tm_yday
+                                f"{prefix}Is_Weekend": np.nan
+                            }
                         try:
-                            dt = datetime.fromisoformat(iso_string)
+                            dt = datetime.fromisoformat(iso_string) # dt is a datetime.datetime object
                             return {
                                 f"{prefix}Hour": dt.hour,
-                                f"{prefix}Minute_Bin": dt.minute // 15, # Example binning
+                                f"{prefix}Minute_Bin": dt.minute // 15, 
                                 f"{prefix}DayOfWeek": dt.weekday(),
                                 f"{prefix}Month": dt.month,
-                                f"{prefix}DayOfYear": dt.dayofyear,
+                                f"{prefix}DayOfYear": dt.timetuple().tm_yday, # <--- CORRECTED LINE
                                 f"{prefix}Is_Weekend": int(dt.weekday() >= 5)
                             }
-                        except ValueError:
-                             return {f"{prefix}Hour": np.nan, f"{prefix}Minute_Bin": np.nan, f"{prefix}DayOfWeek": np.nan, f"{prefix}Month": np.nan, f"{prefix}DayOfYear": np.nan, f"{prefix}Is_Weekend": np.nan}
+                        except ValueError: # Handle cases where fromisoformat fails
+                             return {
+                                f"{prefix}Hour": np.nan, 
+                                f"{prefix}Minute_Bin": np.nan, 
+                                f"{prefix}DayOfWeek": np.nan, 
+                                f"{prefix}Month": np.nan, 
+                                f"{prefix}DayOfYear": np.nan, 
+                                f"{prefix}Is_Weekend": np.nan
+                            }
 
                     dt_features = pd.json_normalize(features_df[iso_col_name].apply(parse_dt))
                     features_df = pd.concat([features_df.drop(columns=[iso_col_name]), dt_features], axis=1)
                     print(f"Engineered datetime features with prefix '{prefix}' for {model_name}.")
-
 
         # Special handling for Passenger Volume Forecaster (Daily Total)
         if model_name == "passenger_volume_forecaster":
