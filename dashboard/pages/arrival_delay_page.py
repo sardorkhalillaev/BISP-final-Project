@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd # For creating input DataFrame
 from datetime import datetime
 
-# You might want a shared UI components file in utils if get_flight_input_features is complex
-# For now, let's assume a simplified version or define specific inputs here.
+
 
 def get_flight_inputs_for_arrival(df, key_prefix="arr_delay"):
     """Gets common flight inputs, tailored for arrival if needed."""
@@ -37,8 +36,7 @@ def get_flight_inputs_for_arrival(df, key_prefix="arr_delay"):
     inputs['DAY_OF_WEEK'] = dt_arrival.weekday()
     inputs['SCHEDULED_ARRIVAL_HOUR'] = dt_arrival.hour # Model specific feature
     inputs['SCHEDULED_ARRIVAL_MINUTE'] = dt_arrival.minute # Model specific feature
-    # Add any other features your 'delay_time_estimation_arr.pkl' model expects
-    # e.g., inputs['DISTANCE'] = st.number_input("Distance (miles)", ...)
+    
     return inputs
 
 def format_arrival_delay_prediction(prediction):
@@ -65,9 +63,7 @@ def render_page(df, model_helper, data_helper):
 
     with st.form(key=f"{MODEL_NAME}_form"):
         raw_features_dict = get_flight_inputs_for_arrival(df, key_prefix=MODEL_NAME)
-        # Potentially add other inputs like weather if your model uses them
-        # weather_inputs = get_weather_inputs_for_flight(...)
-        # raw_features_dict.update(weather_inputs)
+        
         
         submitted = st.form_submit_button("🔮 Predict Arrival Delay")
 

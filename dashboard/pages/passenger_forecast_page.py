@@ -13,12 +13,7 @@ def get_passenger_forecast_inputs(df, key_prefix): # df might be used for airpor
     with col2:
         inputs['num_days'] = st.number_input("Number of Days to Forecast", min_value=1, max_value=90, value=7, key=f"{key_prefix}_num_days")
 
-    # If your model is airport/terminal specific:
-    # inputs['airport_code'] = st.selectbox("Airport for Forecast", options=get_options(df, 'OriginAirport'), key=f"{key_prefix}_airport")
-    # inputs['terminal_id'] = st.text_input("Terminal (if applicable)", key=f"{key_prefix}_terminal")
-    
-    # You might also add inputs for known events, holidays if your model uses them
-    # inputs['is_holiday_period'] = st.checkbox("Is this a holiday period?", key=f"{key_prefix}_holiday")
+   
     return inputs
 
 def render_page(df, model_helper, data_helper): # df might be used for context or dropdowns
@@ -28,8 +23,7 @@ def render_page(df, model_helper, data_helper): # df might be used for context o
     if not model_helper.is_model_loaded(MODEL_NAME):
         st.warning(f"Passenger Forecasting model ('{MODEL_NAME}') is not loaded.")
         return
-    # df might not be strictly needed for inputs if forecast is purely time-based,
-    # but good to have for context or if model uses airport-specific historicals.
+    
 
     with st.form(key=f"{MODEL_NAME}_form"):
         raw_params = get_passenger_forecast_inputs(df, key_prefix=MODEL_NAME)
@@ -46,16 +40,14 @@ def render_page(df, model_helper, data_helper): # df might be used for context o
             for i in range(num_days):
                 current_date = start_date + timedelta(days=i)
                 forecast_dates.append(current_date)
-                # DataHelper will need to convert this into features your model expects
-                # (e.g., year, month, day, day_of_week, is_holiday, etc.)
+                
                 date_features = {
-                    'date_iso': current_date.isoformat(), # For DataHelper to parse
-                    # Add other parameters from raw_params if model needs them (e.g., airport_code)
-                    # 'airport_code': raw_params.get('airport_code') 
+                    'date_iso': current_date.isoformat(), 
+                    
                 }
                 forecast_input_list.append(date_features)
 
-            # DataHelper processes a list of these raw daily feature dicts
+           
             features_df_multi_day = data_helper.preprocess_input_for_model(forecast_input_list, MODEL_NAME)
             
             if features_df_multi_day.empty and num_days > 0 : # check if preprocessing failed

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, time
 
-# --- Helper function (define or import) ---
+
 def get_options(df_source, column_name, default_val="--Select--", sort_options=True):
     options = [default_val]
     if df_source is not None and column_name in df_source.columns:
@@ -35,14 +35,13 @@ def get_gate_assignment_inputs(df, key_prefix):
     arr_time_val = st.time_input("Scheduled Arrival Time", value=datetime.now().time(), key=f"{key_prefix}_arr_time")
     inputs['ScheduledArrivalTime_iso'] = datetime.combine(arr_date, arr_time_val).isoformat()
     
-    # Also consider Scheduled Departure time from this gate if the model uses turnaround
+    
     st.subheader("🕒 Scheduled Departure from this Gate (if applicable)")
     dep_date_from_gate = st.date_input("Scheduled Departure Date from this Gate", value=datetime.now().date(), key=f"{key_prefix}_dep_gate_date")
     dep_time_from_gate_val = st.time_input("Scheduled Departure Time from this Gate", value=datetime.now().time(), key=f"{key_prefix}_dep_gate_time")
     inputs['ScheduledDepartureFromGateTime_iso'] = datetime.combine(dep_date_from_gate, dep_time_from_gate_val).isoformat()
     
-    # inputs['AircraftTurnaroundTime'] = st.number_input("Planned Turnaround Time (min)", value=60, step=5, key=f"{key_prefix}_turnaround_gate")
-
+    
     return inputs
 
 def render_page(df, model_helper, data_helper):
@@ -61,20 +60,29 @@ def render_page(df, model_helper, data_helper):
         submitted = st.form_submit_button("Predict Gate")
 
     if submitted:
-        if raw_features.get('Airline') == "--Select--": # Add more critical fields
+        if raw_features.get('Airline') == "--Select--": 
             st.error("Please select all required flight details.")
             return
         try:
             features_df = data_helper.preprocess_input_for_model(raw_features, MODEL_NAME)
             if features_df.empty:
-                st.error("Preprocessing failed. Check DataHelper and input values.")
+                st.error("Preprocessing failed. Check input values and DataHelper logs.")
                 return
 
-            prediction = model_helper.predict_gate(features_df) # Method in ModelHelper
-            assigned_gate = prediction[0] # Assuming it returns the gate name/number
+            prediction_encoded = model_helper.predict_gate(features_df) # Gets encoded label
             
-            st.success(f"**Predicted Gate: {assigned_gate}**")
-            st.balloons()
+            if pd.isna(prediction_encoded[0]): # Check if prediction is NaN
+                 st.warning("Could not predict gate. Input data might be insufficient after preprocessing.")
+                 return
+
+           
+            gate_label_encoder = data_helper.label_encoders.get(MODEL_NAME)
+            if gate_label_encoder:
+                assigned_gate_label = gate_label_encoder.inverse_transform(prediction_encoded) # Pass as array-like
+                st.success(f"**Predicted Gate: {assigned_gate_label[0]}**")
+                st.balloons()
+            else:
+                st.error(f"Label encoder for '{MODEL_NAME}' not found. Cannot display original gate name. Predicted code: {prediction_encoded[0]}")
         except KeyError as e:
             st.error(f"Feature mismatch error: {e}. Check input and DataHelper for '{MODEL_NAME}'.")
         except Exception as e:

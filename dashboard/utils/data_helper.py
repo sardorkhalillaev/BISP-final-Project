@@ -1,30 +1,29 @@
-# In utils/data_helper.py
+
 
 import pandas as pd
 import numpy as np
-import streamlit as st # Keep for st.error/warning if needed during preprocessing
+import streamlit as st 
 import os
 from datetime import datetime
-import joblib # Crucial for loading your .pkl files
+import joblib
 import holidays
 class DataHelper:
     def __init__(self):
-        self.data = None # This will hold the main flights.csv data
+        self.data = None 
         self.data_loaded = False
 
         # --- Load ALL Preprocessing Artifacts ---
-        models_meta_dir = "models_meta" # Ensure this path is correct relative to main.py
-        self.preprocessors = {}
-        self.feature_names_lists = {} # To store the lists of expected feature names after preprocessing
-        self.label_encoders = {}    # To store label encoders for classification targets
+        models_meta_dir = "models_meta" 
+        self.feature_names_lists = {} 
+        self.label_encoders = {}    
 
         model_configs = {
             "delay_departure_regressor": {"prefix": "dep_delay"},
             "delay_arrival_regressor": {"prefix": "arr_delay"},
             "gate_classifier": {"prefix": "gate", "has_label_encoder": True},
             "ontime_performance_classifier": {"prefix": "ontime", "has_label_encoder": True},
-            "passenger_volume_forecaster": {"prefix": "passenger_daily_total"}, # Assuming daily total
-            "weather_estimator": {"prefix": "weather_impact", "has_label_encoder": True} # Assuming weather impact is classification
+            "passenger_volume_forecaster": {"prefix": "passenger_daily_total"},
+            "weather_estimator": {"prefix": "weather_impact", "has_label_encoder": True} 
         }
 
         for model_key, config in model_configs.items():
@@ -65,18 +64,13 @@ class DataHelper:
         else:
             st.sidebar.error("No preprocessing objects were loaded. Predictions will likely fail.")
 
-        # For Passenger Volume Forecaster (Daily Total), we need historical daily passenger data to create lags
-        # This part is specific to the time series model.
+       
         if "passenger_volume_forecaster" in self.preprocessors: # Check if its preprocessor loaded
             self._prepare_historical_daily_passengers()
 
 
     def _prepare_historical_daily_passengers(self):
-        """
-        Loads and prepares historical daily passenger data needed for lag features
-        in the passenger_volume_forecaster.
-        This should be called after the main flights.csv data is loaded.
-        """
+       
         self.historical_daily_passengers_ts = None
         if self.data is not None and not self.data.empty:
             temp_df = self.data.copy()
@@ -90,11 +84,7 @@ class DataHelper:
                 daily_passengers['Date'] = pd.to_datetime(daily_passengers['Date'])
                 daily_passengers = daily_passengers.sort_values(by='Date').set_index('Date')
                 
-                # Reindex to ensure all dates are present (optional, but good for robust lag creation)
-                # if not daily_passengers.empty:
-                #     all_dates = pd.date_range(start=daily_passengers.index.min(), end=daily_passengers.index.max(), freq='D')
-                #     daily_passengers = daily_passengers.reindex(all_dates)
-                #     daily_passengers['TotalDailyPassengers'] = daily_passengers['TotalDailyPassengers'].interpolate(method='linear')
+                
                 
                 self.historical_daily_passengers_ts = daily_passengers[['TotalDailyPassengers']] # Keep only target
                 print("DataHelper: Historical daily passenger time series prepared.")
@@ -111,12 +101,12 @@ class DataHelper:
                 data = pd.read_csv(data_path)
                 if data.empty:
                     _self.data = None; _self.data_loaded = False
-                    return pd.DataFrame() # Return empty DataFrame
+                    return pd.DataFrame() 
                 
-                data.columns = data.columns.str.strip() # Good practice
+                data.columns = data.columns.str.strip() 
                 _self.data = data
                 _self.data_loaded = True
-                _self._prepare_historical_daily_passengers() # Prepare historical data after main load
+                _self._prepare_historical_daily_passengers() 
                 return data
             else:
                 _self.data = None; _self.data_loaded = False
@@ -133,7 +123,7 @@ class DataHelper:
             features_df = pd.DataFrame([raw_features_input])
         elif isinstance(raw_features_input, list) and model_name == "passenger_volume_forecaster": # Special handling for list input for passenger forecast
             features_df = pd.DataFrame(raw_features_input)
-        elif isinstance(raw_features_input, list): # General case if other models might take lists (unlikely for now)
+        elif isinstance(raw_features_input, list): 
              features_df = pd.DataFrame(raw_features_input)
         else:
             st.error(f"Invalid input type for preprocessing: {type(raw_features_input)}")
@@ -147,17 +137,16 @@ class DataHelper:
             return pd.DataFrame()
 
         # --- Stage 1: Engineer features from raw inputs that the preprocessor itself doesn't handle ---
-        # (e.g., parsing datetime strings from UI into numerical components like hour, month, dayofweek)
-        # This step creates the columns that your preprocessor's ColumnTransformer was *trained* on.
+       
         
         # Datetime engineering for departure/arrival based models
         datetime_iso_map = {
             "delay_departure_regressor": {"iso_col": "ScheduledTime_iso", "prefix": "Scheduled_"},
             "delay_arrival_regressor": {"iso_col": "ScheduledArrivalTime_iso", "prefix": "ScheduledArrival_"},
-            "gate_classifier": {"iso_col": "ScheduledArrivalTime_iso", "prefix": "Arrival_"}, # Gate uses Arrival Time
+            "gate_classifier": {"iso_col": "ScheduledArrivalTime_iso", "prefix": "Arrival_"}, 
             "ontime_performance_classifier": {"iso_col_arr": "ScheduledArrivalTime_iso", "prefix_arr": "SchArr_",
-                                              "iso_col_dep": "ScheduledTime_iso", "prefix_dep": "SchDep_"}, # OnTime might use both
-            "weather_estimator": {"iso_col": "Context_ScheduledTime_iso", "prefix": "WeatherObs_"} # If weather model uses flight time context
+                                              "iso_col_dep": "ScheduledTime_iso", "prefix_dep": "SchDep_"},
+            "weather_estimator": {"iso_col": "Context_ScheduledTime_iso", "prefix": "WeatherObs_"} 
         }
 
         current_model_dt_config = datetime_iso_map.get(model_name)
@@ -194,7 +183,7 @@ class DataHelper:
 
         # Special handling for Passenger Volume Forecaster (Daily Total)
         if model_name == "passenger_volume_forecaster":
-            if 'date_iso' in features_df.columns: # Input from UI for future dates
+            if 'date_iso' in features_df.columns: 
                 temp_feature_list = []
                 for idx, row in features_df.iterrows():
                     current_date = datetime.fromisoformat(row['date_iso']).date() # Date object
@@ -212,11 +201,7 @@ class DataHelper:
                     country_holidays = holidays.US(years=[current_date.year]) # Adjust country
                     date_features['Is_Holiday'] = int(current_date in country_holidays)
 
-                    # Lag and Rolling Window Features (CRITICAL and COMPLEX for future dates)
-                    # These need to be based on self.historical_daily_passengers_ts
-                    # For future dates, you might only have lags up to the most recent historical data point.
-                    # Or, if predicting multi-step ahead recursively, you'd use previous predictions.
-                    # This example will use lags from the historical series.
+                   
                     if self.historical_daily_passengers_ts is not None:
                         lags_to_create = [1, 2, 3, 7, 14, 30]
                         for lag in lags_to_create:
@@ -250,20 +235,17 @@ class DataHelper:
 
 
         # --- Stage 2: Apply the fitted ColumnTransformer (preprocessor) ---
-        # The preprocessor expects columns like 'Airline', 'Scheduled_Hour', etc.
-        # It will handle imputation, scaling, and one-hot encoding internally as defined during training.
+       
         try:
             print(f"DataHelper: Columns going INTO preprocessor for '{model_name}': {features_df.columns.tolist()}")
-            # Ensure all columns expected by the preprocessor are present in features_df
-            # The preprocessor.feature_names_in_ attribute (if scikit-learn >= 1.0) lists these.
-            # If not available, this step relies on features_df having the right raw columns.
+           
             if hasattr(preprocessor, 'feature_names_in_'):
                 missing_cols_for_preprocessor = set(preprocessor.feature_names_in_) - set(features_df.columns)
                 if missing_cols_for_preprocessor:
                     st.error(f"Missing columns required by the preprocessor for {model_name}: {missing_cols_for_preprocessor}")
                     for col in missing_cols_for_preprocessor: features_df[col] = np.nan # Add them as NaN so imputer can handle
             
-            processed_data_np = preprocessor.transform(features_df) # This applies all steps in the ColumnTransformer
+            processed_data_np = preprocessor.transform(features_df)
 
             # --- Stage 3: Reconstruct DataFrame with correct feature names AFTER transform ---
             if expected_feature_names_after_transform:
@@ -305,18 +287,16 @@ class DataHelper:
             st.exception(e)
             return pd.DataFrame()
 
-    # --- Your OTHER existing methods (get_data_summary, filter_data, etc.) ---
-    # Remember to REVIEW AND UPDATE COLUMN NAMES in these methods to match your actual flights.csv
-    # ... (paste your other methods here, then review them for column name consistency) ...
+
     def get_data_summary(self):
-        # ... (your existing code) ...
+       
         if self.data is not None:
             summary = {
                 'total_records': len(self.data),
                 'columns': list(self.data.columns),
-                'date_range': None, # Initialize
-                'airlines': None,   # Initialize
-                'destinations': None # Initialize
+                'date_range': None, 
+                'airlines': None,   
+                'destinations': None 
             }
             if 'ScheduledTime' in self.data.columns and pd.api.types.is_datetime64_any_dtype(self.data['ScheduledTime']):
                 summary['date_range'] = {
@@ -331,7 +311,7 @@ class DataHelper:
         return None
 
     def filter_data(self, filters):
-        # ... (your existing code, ensure column names match your CSV e.g., 'ScheduledTime', 'Airline', 'ArrivalAirport') ...
+        
         if self.data is None:
             return None
         filtered_data = self.data.copy()
@@ -392,7 +372,7 @@ class DataHelper:
         return chart_data
 
     def export_data(self, data, filename, format='csv'):
-        # ... (your existing code) ...
+       
         try:
             if format.lower() == 'csv': return data.to_csv(index=False)
             elif format.lower() == 'json': return data.to_json(orient='records', date_format='iso')
@@ -400,7 +380,7 @@ class DataHelper:
         except Exception as e: st.error(f"Error exporting data: {str(e)}"); return None
 
     def validate_data_quality(self):
-        # ... (your existing code) ...
+       
         if self.data is None: return ["No data loaded"]
         issues = []
         if self.data.isnull().sum().any(): issues.append(f"Missing values found in columns: {self.data.isnull().sum()[self.data.isnull().sum() > 0].index.tolist()}")

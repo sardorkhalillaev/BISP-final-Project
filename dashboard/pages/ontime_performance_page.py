@@ -72,7 +72,9 @@ def get_ontime_performance_inputs(df, key_prefix):
             key=f"{key_prefix}_runway_delay_input", 
             help="Typical or expected runway congestion/taxi time."
         )
-    # inputs['AircraftTurnaroundTime'] = st.number_input("Planned Turnaround Time (min)", value=60, step=5, key=f"{key_prefix}_turnaround_otp")
+
+
+
     return inputs
 
 def render_page(df, model_helper, data_helper):
@@ -105,11 +107,9 @@ def render_page(df, model_helper, data_helper):
             pred_class, pred_proba = model_helper.predict_on_time_performance(features_df)
             
             status = pred_class[0]
-            # Find the probability of the predicted class. This needs careful handling
-            # based on how your model_helper and model classes_ attribute are set up.
-            # Example: if model.classes_ is ['Delayed', 'On-Time']
+            
             try:
-                # Assuming model_helper.get_model(MODEL_NAME).classes_ gives you the class order
+                
                 model_classes = model_helper.get_model_classes(MODEL_NAME) # You'll need to implement this in ModelHelper
                 class_index = list(model_classes).index(status)
                 probability = pred_proba[0][class_index] * 100

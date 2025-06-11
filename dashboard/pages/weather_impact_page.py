@@ -17,10 +17,9 @@ def get_options(df_source, column_name, default_val="--Select--", sort_options=T
 def get_weather_impact_inputs(df, key_prefix):
     inputs = {}
     st.subheader("🌦️ Weather Conditions for Impact Analysis")
-    # Your 'WeatherCondition' column is categorical. If model uses this, selectbox is fine.
-    # If model uses more granular weather (temp, wind), you'd add those.
+  
     
-    inputs['WeatherCondition_input'] = st.selectbox( # Renamed to avoid clash if 'WeatherCondition' is a direct feature
+    inputs['WeatherCondition_input'] = st.selectbox( 
         "Select Overall Weather Condition", 
         options=get_options(df, 'WeatherCondition', default_val="Clear"), 
         key=f"{key_prefix}_weather_cond_select"
@@ -75,9 +74,8 @@ def render_page(df, model_helper, data_helper):
                 st.error("Preprocessing failed. Check DataHelper and input values.")
                 return
 
-            # The output of this model is highly dependent on how it was trained.
-            # It could be a risk score, predicted delay component, categorical impact level, etc.
-            prediction = model_helper.estimate_weather_impact(features_df) # Method in ModelHelper
+            
+            prediction = model_helper.estimate_weather_impact(features_df) 
             
             st.subheader("Weather Impact Assessment:")
             if isinstance(prediction, (float, int)):

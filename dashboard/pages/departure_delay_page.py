@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, time # Make sure these are at the top
+from datetime import datetime, time 
 
-# --- Helper function (define or import) ---
+
 def get_options(df_source, column_name, default_val="--Select--", sort_options=True):
     options = [default_val]
     if df_source is not None and column_name in df_source.columns:
@@ -77,8 +77,8 @@ def render_page(df, model_helper, data_helper):
         submitted = st.form_submit_button("🔮 Predict Departure Delay")
 
     if submitted:
-        # Validate inputs (example for selectbox)
-        if raw_features.get('Airline') == "--Select--" or raw_features.get('OriginAirport') == "--Select--": # Add more critical fields
+        # Validate inputs 
+        if raw_features.get('Airline') == "--Select--" or raw_features.get('OriginAirport') == "--Select--": 
             st.error("Please select all required flight details (Airline, Origin Airport, etc.).")
             return
 
@@ -88,13 +88,13 @@ def render_page(df, model_helper, data_helper):
                 st.error("Preprocessing failed. Check DataHelper and input values.")
                 return
                 
-            prediction = model_helper.predict_departure_delay(features_df) # Method in ModelHelper
+            prediction = model_helper.predict_departure_delay(features_df) 
             delay_minutes = prediction[0]
             
             st.metric(label="Predicted Departure Delay", value=f"{delay_minutes:.0f} minutes")
             if delay_minutes > 15:
                 st.warning("Flight is predicted to have a significant departure delay.")
-            elif delay_minutes < -5 : # Allowing for early departures
+            elif delay_minutes < -5 : 
                  st.info("Flight is predicted to depart early or on-time.")
             else:
                 st.success("Flight is predicted to depart on-time or with a minor delay.")

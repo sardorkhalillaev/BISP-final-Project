@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime # Keep if used directly in main
+from datetime import datetime 
 
 # Import utilities
 from utils.model_helper import ModelHelper
 from utils.data_helper import DataHelper
 
-# Import page rendering functions
+
 from pages import (
     overview_page,
     departure_delay_page,
-    arrival_delay_page, # Assuming you have an arrival_delay_page.py
+    arrival_delay_page, 
     gate_assignment_page,
     ontime_performance_page,
     passenger_forecast_page,
@@ -23,7 +23,7 @@ st.set_page_config(
     page_title="Airport Operations ML Dashboard",
     page_icon="✈️",
     layout="wide",
-    initial_sidebar_state="expanded" # Or "auto" or "collapsed"
+    initial_sidebar_state="expanded" 
 )
 
 # Path to your data file
@@ -39,19 +39,19 @@ def load_css():
 
 @st.cache_resource # Caching is good for these helpers
 def initialize_helpers():
-    """Initialize and return data and model helpers."""
+   
     data_helper = DataHelper()
     model_helper = ModelHelper() # ModelHelper's __init__ should now load all models
     return data_helper, model_helper
 
-# THIS IS THE KEY CHANGE: Note the underscore before data_helper_instance
+
 @st.cache_data 
 def load_app_data(data_path, _data_helper_instance): # <-- Underscore added here
     """Load the application's primary dataset."""
     if os.path.exists(data_path):
         try:
             with st.spinner(f"Loading flight data from {data_path}..."):
-                # Use the passed-in instance, even though it's not part of the cache key
+               
                 df = _data_helper_instance.load_csv_data(data_path) 
             if df is not None and not df.empty:
                 st.session_state.data_loaded_successfully = True
@@ -80,11 +80,10 @@ if 'models_checked' not in st.session_state: # To show model status once
 def main():
     load_css()
     
-    # Initialize helpers (ModelHelper loads models internally now)
+
     data_h, model_h = initialize_helpers()
 
-    # Load data automatically
-    # We pass data_h to load_app_data because it might have data loading logic
+
     app_df = load_app_data(DEFAULT_DATA_PATH, data_h)
 
     # Main header
@@ -138,8 +137,7 @@ def main():
         # You could add more detailed instructions here if needed
         return # Stop further execution if data isn't loaded
 
-    # If models are critical for all tabs, you might also check all_models_loaded here
-    # For now, individual tabs will check their specific model.
+   
 
     tab_titles = [
         "📊 Overview", "⏱️ Arr. Delay", "⏱️ Dep. Delay", "🚪 Gate Assign.", 
@@ -153,7 +151,7 @@ def main():
         overview_page.render_page(app_df, data_h)
 
     with tab_arr_delay:
-        # Assuming arrival_delay_page.py exists and is imported
+       
         arrival_delay_page.render_page(app_df, model_h, data_h) 
     
     with tab_dep_delay:
